@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="40" height="120" viewBox="0 0 40 120">
+    <g fill="none" fill-rule="evenodd">
+        <path fill="#24A9FF" fill-opacity=".7" d="M0 2.008A2 2 0 0 1 1.997 0H40v120H1.997A2.001 2.001 0 0 1 0 117.992V2.008z"/>
+        <text fill="#FFF" font-family="AvenirNext-DemiBold, Avenir Next" font-size="14" font-weight="500" transform="rotate(-90 20 59.5)">
+            <tspan x="-12" y="64">Feedback</tspan>
+        </text>
+    </g>
+</svg>
