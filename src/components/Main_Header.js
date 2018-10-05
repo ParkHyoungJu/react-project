@@ -4,8 +4,11 @@ import Background2 from '../images/background.jpg';
 import MainSearchInput from './Main_Search_Input';
 
 class Main_Header extends Component{
-  state = {
-    backgroundImage: [`url(${Background1})` , `url(${Background2})`]
+  constructor(){
+    super();
+    this.state = {
+      backgroundImage: [`url(${Background1})` , `url(${Background2})`]
+    }
   }
 
   render(){
