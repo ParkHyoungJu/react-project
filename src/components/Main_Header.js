@@ -4,11 +4,15 @@ import Background2 from '../images/background.jpg';
 import MainSearchInput from './Main_Search_Input';
 
 class Main_Header extends Component{
-  constructor(){
-    super();
+  constructor(props){
+    super(props);
     this.state = {
       backgroundImage: [`url(${Background1})` , `url(${Background2})`]
     }
+  }
+
+  handleToChild(type, srcCity, dstCity, dates){
+    this.props.handleToMain(type, srcCity, dstCity, dates);
   }
 
   render(){
@@ -25,7 +29,7 @@ class Main_Header extends Component{
           </a>
           ... but we won.
         </h2>
-        <MainSearchInput></MainSearchInput>
+        <MainSearchInput handleToChild={this.handleToChild.bind(this)}></MainSearchInput>
       </div>
     );
   }

@@ -1,21 +1,26 @@
 import React, { Component } from 'react';
+import DateRangePicker from 'react-daterange-picker';
+import 'react-daterange-picker/dist/css/react-calendar.css';
+import moment from 'moment';
 
 class Main_Search_Input extends Component{
 
-  constructor(){
-    super();
+  constructor(props){
+    super(props);
     this.state = {
       type: 'rt',
       srcCity: 'SEL',
       dstCity: 'TYO',
       srcCityShadow: 'SEOUL',
       dstCityShadow: 'TOKYO',
-      isLoaded: false,
       error: null,
       srcCities: [],
       dstCities: [],
       srcUlStyle: {},
-      dstUlStyle: {}
+      dstUlStyle: {},
+      startDateStyle: {},
+      endDateStyle: {},
+      dates: null
     };
   }
 
@@ -23,7 +28,7 @@ class Main_Search_Input extends Component{
     this.setState({
       ...this.state,
       type: tripType
-    })
+    });
   }
 
   handleKeyUp = (e) => {
@@ -46,17 +51,25 @@ class Main_Search_Input extends Component{
 
   handleClick = (e) => {
     this.setInputPosition();
-    this.getAutocomplete(e);
+    if(e.target.classList.contains('ui-autocomplete-input')){
+      this.getAutocomplete(e);
+    }else{
+      setTimeout(function(){
+        document.getElementById('date-picker-div').style.display = 'block';
+      }, 200);
 
+    }
   }
 
   handleBlur = (e) => {
-    setTimeout(function(){
-      Array.prototype.forEach.call(document.getElementsByClassName('ui-widget'), function(target){
-          target.style.display = 'none'
-        }
-      );
-    }, 100);
+    if(e.relatedTarget === null || e.relatedTarget.id !== 'date-picker-div'){
+      setTimeout(function(){
+        Array.prototype.forEach.call(document.getElementsByClassName('ui-widget'), function(target){
+            target.style.display = 'none'
+          }
+        );
+      }, 100);
+    }
   }
 
   handleListClick = (target, city) => {
@@ -75,23 +88,35 @@ class Main_Search_Input extends Component{
     }
   }
 
+  onSelect = (dates) => {
+    this.setState({
+      ...this.state,
+      dates
+    });
+    document.getElementById('date-picker-div').style.display = 'none';
+    if(this.state.type === 'rt'){
+      document.getElementsByClassName('start-date')[0].value = dates.start.format('MMM DD');
+      document.getElementsByClassName('end-date')[0].value = dates.end.format('MMM DD');
+    }else{
+      document.getElementsByClassName('start-date')[0].value = dates.format('MMM DD');
+    }
+  }
+
   getCities(value, isSrcInput) {
     let $uiAutocomplete = isSrcInput? document.getElementById('ui-id-1') : document.getElementById('ui-id-2');
 
-    fetch("http://10.5.39.169:8080/cities/search/" + value)
+    fetch("http://10.5.39.169:8050/cities/search/" + value)
       .then(res => res.json())
       .then(
         (result) => {
           if(isSrcInput){
             this.setState({
               ...this.state,
-              isLoaded: true,
               srcCities: result
             });
           }else{
             this.setState({
               ...this.state,
-              isLoaded: true,
               dstCities: result
             });
           }
@@ -103,7 +128,6 @@ class Main_Search_Input extends Component{
         (error) => {
           this.setState({
             ...this.state,
-            isLoaded: true,
             error
           });
         }
@@ -113,9 +137,15 @@ class Main_Search_Input extends Component{
   setInputPosition(){
     let srcLeftPosition = document.getElementsByClassName('trip-row')[0].offsetLeft;
     let dstLeftPosition = srcLeftPosition + document.getElementsByClassName('src-input')[0].offsetWidth;
-    // let startDateLeftPosition = dstLeftPosition + document.getElementsByClassName('dst-input')[0].offsetWidth;
-    // let endDateLeftPosition = startDateLeftPosition + document.getElementsByClassName('start-date')[0].offsetWidth;
+    let startDateLeftPosition = dstLeftPosition + document.getElementsByClassName('dst-input')[0].offsetWidth;
+    let endDateLeftPosition = startDateLeftPosition + document.getElementsByClassName('start-date')[0].offsetWidth;
     let topPosition = document.getElementsByClassName('trip-row')[0].offsetTop + 70;
+    let defaultCalWidth = 650;
+
+    if(window.innerWidth - (startDateLeftPosition + defaultCalWidth) < 0){
+      startDateLeftPosition += (window.innerWidth - (startDateLeftPosition + defaultCalWidth))
+    }
+
     this.setState({
       ...this.state,
       srcUlStyle: {
@@ -124,11 +154,27 @@ class Main_Search_Input extends Component{
         left: srcLeftPosition,
         width: '400px'
       },
-      dstUlStyle:{
+      dstUlStyle: {
         display: 'none',
         top: topPosition,
         left: dstLeftPosition,
         width: '400px'
+      },
+      startDateStyle: {
+        display: 'none',
+        position: 'absolute',
+        top: topPosition,
+        left: startDateLeftPosition,
+        width: '650px',
+        backgroundColor: 'white'
+      },
+      endDateStyle: {
+        display: 'none',
+        position: 'absolute',
+        top: topPosition,
+        left: endDateLeftPosition,
+        width: '310px',
+        backgroundColor: 'white'
       }
     });
   }
@@ -142,13 +188,11 @@ class Main_Search_Input extends Component{
       if(isSrcInput){
         this.setState({
           ...this.state,
-          isLoaded: true,
           srcCities: []
         });
       }else{
         this.setState({
           ...this.state,
-          isLoaded: true,
           dstCities: []
         });
       }
@@ -160,15 +204,14 @@ class Main_Search_Input extends Component{
   }
 
   componentDidMount(){
+    this.setInputPosition();
     window.addEventListener('resize', () => {
       this.setInputPosition();
     });
   }
 
   render(){
-    const { type, srcCities, dstCities, inputPosition, srcUlStyle, dstUlStyle, srcCity, srcCityShadow, dstCity, dstCityShaodw } = this.state;
-    const { tripTypeClick, handleKeyUp, handleChange, handleClick, handleBlur, handleListClick } = this;
-    const srcCityList = srcCities.map(
+    const srcCityList = this.state.srcCities.map(
       (city) => (
           <li key={city.id} className="ui-menu-item" id={`ui-id-${city.id}`} tabIndex="-1" onClick={(e) => this.handleListClick('src', city)}>
             <a>
@@ -178,7 +221,7 @@ class Main_Search_Input extends Component{
           </li>
         )
     );
-    const dstCityList = dstCities.map(
+    const dstCityList = this.state.dstCities.map(
       (city) => (
           <li key={city.id} className="ui-menu-item" id={`ui-id-${city.id}`} tabIndex="-1" onClick={() => this.handleListClick('dst', city)}>
             <a>
@@ -188,14 +231,16 @@ class Main_Search_Input extends Component{
           </li>
         )
     );
+    const minDate = new Date();
+    const maxDate = moment(minDate).add('10', 'M').date(0).toDate();
     return(
       <form className="flight-search-form ui-front">
         <div className="trip-type-selection">
-          <button type="button" className={`trip-type ${type === 'rt'? 'active-trip': ''}`} onClick={() => this.tripTypeClick("rt")}>Round Trip</button>
-          <button type="button" className={`trip-type ${type === 'ow'? 'active-trip': ''}`} onClick={() => this.tripTypeClick("ow")}>One Way</button>
+          <button type="button" className={`trip-type ${this.state.type === 'rt'? 'active-trip': ''}`} onClick={() => this.tripTypeClick("rt")}>Round Trip</button>
+          <button type="button" className={`trip-type ${this.state.type === 'ow'? 'active-trip': ''}`} onClick={() => this.tripTypeClick("ow")}>One Way</button>
         </div>
         <div className="form-row">
-          <div className="trip-row" onClick={handleClick} onBlur={this.handleBlur}>
+          <div className="trip-row" onClick={this.handleClick} onBlur={this.handleBlur}>
             <label className="input-label location-input">
               <span className="input-label-text">From</span>
               <input type="text" className="src-input ui-autocomplete-input" placeholder="" value={this.state.srcCity} data-shadow="SEOUL" onKeyUp={this.handleKeyUp} onChange={this.handleChange}/>
@@ -221,19 +266,31 @@ class Main_Search_Input extends Component{
                 <span className="input-label-text">Departure</span>
                 <input type="text" className="date-input start-date hasDatepicker" placeholder="Depart" readOnly />
               </label>
-              <label className="input-label date-input-label">
+              <label className={`input-label date-input-label ${this.state.type === 'ow' && 'hidden'}`}>
                 <span className="input-label-text">Return</span>
                 <input type="text" className="date-input end-date hasDatepicker" placeholder="Return" readOnly />
               </label>
             </div>
           </div>
+          <button type="button" className="blue-btn" onClick={() => this.props.handleToChild(this.state.type, this.state.srcCity, this.state.dstCity, this.state.dates)}>Search Flights</button>
         </div>
-        <ul className="ui-autocomplete ui-front ui-menu ui-widget ui-widget-content" id="ui-id-1" tabIndex="0" style={srcUlStyle}>
+        <ul className="ui-autocomplete ui-front ui-menu ui-widget ui-widget-content" id="ui-id-1" tabIndex="0" style={this.state.srcUlStyle}>
           {srcCityList}
         </ul>
-        <ul className="ui-autocomplete ui-front ui-menu ui-widget ui-widget-content" id="ui-id-2" tabIndex="0" style={dstUlStyle}>
+        <ul className="ui-autocomplete ui-front ui-menu ui-widget ui-widget-content" id="ui-id-2" tabIndex="0" style={this.state.dstUlStyle}>
           {dstCityList}
         </ul>
+        <div className="ui-widget ui-widget-content" id="date-picker-div" style={this.state.startDateStyle} tabIndex="0" onBlur={this.handleBlur}>
+          <DateRangePicker
+            selectionType={this.state.type === 'ow'? 'single': 'range'}
+            onSelect={this.onSelect}
+            value={this.state.type === 'ow'? this.state.dates.start :this.state.dates}
+            singleDateRange={true}
+            numberOfCalendars={2}
+            minimumDate={minDate}
+            maximumDate={maxDate}
+          />
+        </div>
       </form>
     );
   }
