@@ -11,8 +11,8 @@ class Main_Header extends Component{
     }
   }
 
-  handleToChild(type, srcCity, dstCity, dates){
-    this.props.handleToMain(type, srcCity, dstCity, dates);
+  handleToChild(type, srcAirport, dstAirport, dates){
+    this.props.handleToMain(type, srcAirport, dstAirport, dates);
   }
 
   render(){
